@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="strand1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="50%" stop-color="#FACC15"/>
+      <stop offset="100%" stop-color="#EAB308"/>
+    </linearGradient>
+    <linearGradient id="strand2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#86EFAC"/>
+      <stop offset="50%" stop-color="#4ADE80"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- DNA Strand 1 (yellow — code strand) -->
+  <path d="M 168 52
+           C 168 118, 344 118, 344 184
+           C 344 250, 168 250, 168 316
+           C 168 382, 344 382, 344 438"
+        fill="none" stroke="url(#strand1)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- DNA Strand 2 (green — evolution strand) -->
+  <path d="M 344 52
+           C 344 118, 168 118, 168 184
+           C 168 250, 344 250, 344 316
+           C 344 382, 168 382, 168 438"
+        fill="none" stroke="url(#strand2)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Rungs — progression from dim to bright -->
+  <line x1="200" y1="85" x2="312" y2="85" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.08"/>
+  <line x1="218" y1="118" x2="294" y2="118" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.10"/>
+  <line x1="200" y1="151" x2="312" y2="151" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.13"/>
+  <line x1="218" y1="184" x2="294" y2="184" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.16"/>
+  <line x1="200" y1="217" x2="312" y2="217" stroke="#FACC15" stroke-width="1.5" stroke-linecap="round" opacity="0.13"/>
+
+  <!-- Rung: failure — dim yellow -->
+  <line x1="218" y1="250" x2="294" y2="250" stroke="#EAB308" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+
+  <line x1="200" y1="283" x2="312" y2="283" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.13"/>
+
+  <!-- Rung: breakthrough — bright green glow -->
+  <line x1="200" y1="316" x2="312" y2="316" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" opacity="0.7" filter="url(#glow)"/>
+
+  <line x1="218" y1="349" x2="294" y2="349" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" opacity="0.14"/>
+  <line x1="200" y1="382" x2="312" y2="382" stroke="#FACC15" stroke-width="1.5" stroke-linecap="round" opacity="0.10"/>
+  <line x1="218" y1="415" x2="294" y2="415" stroke="#FACC15" stroke-width="1.5" stroke-linecap="round" opacity="0.07"/>
+
+  <!-- Interleaved instruction labels: ds_read (yellow) → v_fmac (green) → ds_read → v_fmac -->
+  <text x="142" y="89" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#FACC15" opacity="0.45" text-anchor="end">ds_read</text>
+  <text x="142" y="155" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#4ADE80" opacity="0.45" text-anchor="end">v_fmac</text>
+  <text x="142" y="221" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#FACC15" opacity="0.45" text-anchor="end">ds_read</text>
+  <text x="142" y="287" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#4ADE80" opacity="0.45" text-anchor="end">v_fmac</text>
+  <text x="142" y="353" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#FACC15" opacity="0.45" text-anchor="end">ds_read</text>
+  <text x="142" y="419" font-family="'SF Mono',Menlo,monospace" font-size="9" fill="#4ADE80" opacity="0.45" text-anchor="end">v_fmac</text>
+
+  <!-- Convergence point -->
+  <circle cx="256" cy="438" r="3.5" fill="#4ADE80" opacity="0.5" filter="url(#softglow)"/>
+
+  <!-- Title -->
+  <text x="256" y="492" font-family="'Helvetica Neue',Helvetica,sans-serif" font-size="28" font-weight="700"
+        fill="#1a1a1a" text-anchor="middle" letter-spacing="5">EVOKERNEL</text>
+</svg>

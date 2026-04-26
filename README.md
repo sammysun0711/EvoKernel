@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.svg" width="320" alt="EvoKernel">
+</p>
+
 # EvoKernel: AI reads 10 GPU kernels, beats the hand-tuned best
 
 AI-assisted GPU kernel optimization for 3D depthwise convolution on AMD MI350X.
