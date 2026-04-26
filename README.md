@@ -1,8 +1,9 @@
 # EvoKernel: AI reads 10 GPU kernels, beats the hand-tuned best
 
 AI-assisted GPU kernel optimization for 3D depthwise convolution on AMD MI350X.
-
 **Result**: PyTorch 5.8ms &rarr; hand-tuned 0.61ms &rarr; AI-optimized 0.54ms (10.7x faster than PyTorch)
+
+Presentation: https://sammysun0711.github.io/EvoKernel
 
 ## The Setup: What AI Was Given
 
