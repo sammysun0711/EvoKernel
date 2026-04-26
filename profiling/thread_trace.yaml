@@ -1,0 +1,13 @@
+jobs:
+    -
+        kernel_include_regex: (.*conv_depthwise3d.*)
+        kernel_iteration_range: "[1, [11-12]]"
+        output_file: trace
+        output_directory: trace_out
+        output_format: [json, csv]
+        truncate_kernels: true
+        advanced_thread_trace: true
+        att_target_cu: 1
+        att_shader_engine_mask: "0x1"
+        att_simd_select: "0xf"
+        att_buffer_size: "0x6000000"

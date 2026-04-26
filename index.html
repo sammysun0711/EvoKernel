@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EvoKernel: AI reads 10 GPU kernels, beats the hand-tuned best</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#fafaf8;--paper:#fff;--border:#e0ddd5;--border-light:#eceae2;
+  --tx:#1a1a1a;--tx2:#555;--tx3:#888;--tx4:#aaa;
+  --red:#c7402d;--green:#2d7d46;--blue:#2d5fa0;
+  --code-bg:#f5f4f0;
+  --serif:'Source Serif 4',Georgia,serif;
+  --sans:'Source Sans 3','Helvetica Neue',sans-serif;
+  --mono:'JetBrains Mono','Menlo',monospace;
+  --col:720px;--margin-w:240px;--gap:40px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:17px;line-height:1.8;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(199,64,45,.15)}
+
+/* Layout */
+.container{max-width:calc(var(--col) + var(--margin-w) + var(--gap));margin:0 auto;padding:0 24px;position:relative}
+.col{max-width:var(--col)}
+
+/* Header */
+header{padding:80px 0 48px;border-bottom:1px solid var(--border)}
+header h1{font-family:var(--serif);font-size:32px;font-weight:700;line-height:1.3;letter-spacing:-.01em;margin-bottom:12px;text-wrap:pretty}
+.byline{font-size:14px;color:var(--tx3);margin-bottom:24px}
+.abstract{font-size:16px;color:var(--tx2);line-height:1.8;border-left:3px solid var(--border);padding-left:20px;max-width:var(--col)}
+.abstract strong{color:var(--tx);font-weight:600}
+
+/* Sections */
+section{padding:48px 0;border-bottom:1px solid var(--border-light)}
+section:last-of-type{border:none}
+h2{font-family:var(--serif);font-size:24px;font-weight:700;margin-bottom:8px;line-height:1.4}
+h2 .num{color:var(--tx4);font-weight:400;margin-right:4px}
+h3{font-family:var(--serif);font-size:19px;font-weight:600;margin-top:32px;margin-bottom:4px;line-height:1.4}
+p{margin-bottom:16px;text-wrap:pretty}
+p.lead{font-size:16px;color:var(--tx2);margin-bottom:32px}
+
+/* Margin notes */
+.mn{position:absolute;right:calc(-1 * var(--margin-w) - var(--gap));width:var(--margin-w);font-size:13px;line-height:1.6;color:var(--tx3)}
+.mn code{font-size:11px}
+.mn-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tx4);display:block;margin-bottom:4px}
+
+/* Code */
+code{font-family:var(--mono);font-size:.85em;background:var(--code-bg);padding:1px 5px;border-radius:2px}
+pre{font-family:var(--mono);font-size:13px;line-height:1.7;background:var(--code-bg);border:1px solid var(--border-light);padding:20px 24px;overflow-x:auto;margin:20px 0;white-space:pre}
+pre .c{color:var(--blue)}
+pre .g{color:var(--green)}
+pre .r{color:var(--red)}
+
+/* Figure */
+figure{margin:32px 0}
+figcaption{font-size:13px;color:var(--tx3);margin-top:8px;line-height:1.5}
+figcaption strong{color:var(--tx2);font-weight:600}
+
+/* Chart */
+.chart{border:1px solid var(--border);background:var(--paper)}
+.chart-head{padding:10px 20px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between}
+.chart-head span{font-family:var(--mono);font-size:11px;color:var(--tx3);letter-spacing:.05em;text-transform:uppercase}
+.row{display:grid;grid-template-columns:120px 1fr 80px;align-items:center;padding:7px 20px;border-bottom:1px solid var(--border-light)}
+.row:last-child{border:none}
+.row-l{font-family:var(--mono);font-size:13px;color:var(--tx2)}
+.row-l small{display:block;font-size:10px;color:var(--tx4);margin-top:1px}
+.bar-bg{height:16px}
+.bar{height:100%;transition:width 1s cubic-bezier(.16,1,.3,1);width:0}
+.bar-n{background:#bbb}
+.bar-f{background:var(--red)}
+.bar-w{background:var(--green)}
+.row-v{font-family:var(--mono);font-size:13px;text-align:right;color:var(--tx2)}
+.row-v small{font-size:10px;color:var(--tx4);margin-left:2px}
+.row.fail .row-l,.row.fail .row-v{color:var(--red)}
+.row.win .row-l,.row.win .row-v{color:var(--green)}
+
+/* Step */
+.step{margin-top:28px;padding:20px 0;position:relative}
+.step-head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+.step-head h3{margin:0}
+.step-time{font-family:var(--mono);font-size:13px;color:var(--tx3)}
+.step.fail .step-time{color:var(--red)}
+.step.win .step-time{color:var(--green)}
+.badge{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;display:inline-block;margin-top:8px}
+.badge-f{color:var(--red);border:1px solid rgba(199,64,45,.25)}
+.badge-w{color:var(--green);border:1px solid rgba(45,125,70,.25)}
+
+/* Flow */
+.flow{display:flex;align-items:stretch;gap:0;border:1px solid var(--border);margin:24px 0}
+.flow-node{flex:1;padding:20px;background:var(--paper)}
+.flow-node:not(:last-child){border-right:1px solid var(--border-light)}
+.flow-node h4{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--tx3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.flow-node p{font-size:14px;color:var(--tx2);line-height:1.6;margin:0}
+.flow-arrow{display:flex;align-items:center;padding:0 4px;font-size:18px;color:var(--tx4)}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}
+.tbl th{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tx4);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border-light);color:var(--tx2)}
+.tbl td:nth-child(2),.tbl td:nth-child(3){font-family:var(--mono);font-size:13px}
+.tbl tr.f td{color:var(--red)}
+.tbl tr.w td{color:var(--green);font-weight:600}
+
+/* Correction */
+.cor{border:1px solid var(--border);padding:20px 24px;margin:12px 0;background:var(--paper)}
+.cor h4{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--tx4);margin-bottom:8px}
+.cor .wrong{font-size:14px;color:var(--red);margin-bottom:4px}
+.cor .wrong::before{content:'\2717 ';font-size:12px}
+.cor .right{font-size:14px;color:var(--green);margin-bottom:8px}
+.cor .right::before{content:'\2713 ';font-size:12px}
+.cor p{font-size:14px;color:var(--tx3);margin:0;line-height:1.6}
+
+/* Moments */
+.moment{display:grid;grid-template-columns:1fr 24px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:14px}
+.moment:last-child{border:none}
+.m-h{color:var(--tx2);text-align:right;font-style:italic}
+.m-arr{text-align:center;color:var(--tx4);font-family:var(--mono)}
+.m-a{color:var(--tx2)}
+.m-a strong{color:var(--green);font-weight:600;font-style:normal}
+
+/* Collab grid */
+.collab{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:20px 0}
+.collab-box{border:1px solid var(--border);padding:20px 24px;background:var(--paper)}
+.collab-box h4{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tx4);margin-bottom:12px}
+.collab-box li{font-size:14px;color:var(--tx2);list-style:none;padding:4px 0 4px 16px;position:relative}
+.collab-box li::before{content:'\203A';position:absolute;left:0;color:var(--tx4)}
+
+/* Insight callout */
+.insight{border-left:3px solid var(--blue);padding:10px 16px;background:rgba(45,95,160,.04);margin:16px 0;font-size:15px;color:var(--tx2);line-height:1.7;font-style:italic;font-family:var(--serif)}
+.insight strong{color:var(--tx);font-weight:600;font-style:normal}
+.insight.fail{border-color:var(--red);background:rgba(199,64,45,.03)}
+.insight.win{border-color:var(--green);background:rgba(45,125,70,.03)}
+
+/* Stats row */
+.stats{display:flex;gap:24px;margin-top:24px;flex-wrap:wrap}
+.stat-num{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-top:2px;letter-spacing:.05em;text-transform:uppercase}
+.stat-arrow{font-size:20px;color:var(--tx4);align-self:center}
+
+/* Setup cards */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:20px 0}
+.setup-card{border:1px solid var(--border);padding:16px 20px;background:var(--paper)}
+.setup-card h4{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--tx4);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.setup-card p{font-size:14px;color:var(--tx2);line-height:1.6;margin:0}
+
+/* Dead ends */
+.dead-ends{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.dead-end{font-size:13px;color:var(--tx3);padding:8px 12px;border:1px solid var(--border-light);background:var(--paper);display:flex;justify-content:space-between;align-items:center}
+.dead-end .name{color:var(--tx2)}
+.dead-end .result{font-family:var(--mono);font-size:11px;color:var(--red)}
+
+/* Footer */
+footer{padding:48px 0;text-align:center}
+footer p{font-size:13px;color:var(--tx4)}
+
+/* Responsive: collapse margin notes */
+@media(max-width:1100px){
+  .mn{position:relative;right:auto;width:100%;background:var(--code-bg);padding:12px 16px;margin:12px 0;border-left:2px solid var(--border)}
+}
+@media(max-width:768px){
+  .flow{flex-direction:column}
+  .flow-node:not(:last-child){border-right:none;border-bottom:1px solid var(--border-light)}
+  .flow-arrow{transform:rotate(90deg);padding:4px 0;justify-content:center}
+  .collab{grid-template-columns:1fr}
+  .moment{grid-template-columns:1fr;gap:4px}
+  .m-h{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="col">
+    <h1>EvoKernel: AI reads 10 GPU kernels, beats the hand-tuned best</h1>
+    <div class="byline">Hackathon submission &middot; AMD Instinct MI350X (CDNA4 / gfx950) &middot; Built with Claude Code</div>
+    <div class="abstract">
+      We optimized a 3D depthwise convolution kernel through 5 algorithmic steps, achieving <strong>10.7x speedup over PyTorch</strong> (5.8ms &rarr; 0.54ms). The final breakthrough came from an AI reading an unrelated fused MLP kernel and extracting a compiler scheduling hint (<code>sched_group_barrier</code>) that the human engineer hadn't tried.
+    </div>
+    <div class="stats">
+      <div><div class="stat-num">5.8ms</div><div class="stat-label">PyTorch</div></div>
+      <div class="stat-arrow">&rarr;</div>
+      <div><div class="stat-num">0.61ms</div><div class="stat-label">Hand-tuned (Human)</div></div>
+      <div class="stat-arrow">&rarr;</div>
+      <div><div class="stat-num" style="color:var(--green)">0.54ms</div><div class="stat-label">AI-optimized</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── 1. PROBLEM ── -->
+<section>
+  <div class="col" style="position:relative">
+    <h2><span class="num">1</span> Problem</h2>
+    <p class="lead">3D depthwise convolution on AMD Instinct MI350X.</p>
+
+    <div style="position:relative">
+      <pre><span class="c">Input:   [1, 512, 61, 45, 80]  bf16   (NCHW)</span>
+<span class="c">Weight:  [512, 1, 3, 5, 5]     bf16   (depthwise: groups=512)</span>
+<span class="c">Output:  [1, 512, 59, 45, 80]  bf16</span>
+Padding: (0, 2, 2)   Stride: (1,1,1)   GFLOPs: 16.31</pre>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Context</span>
+        Each output pixel requires 75 multiply-accumulate operations (3&times;5&times;5 filter). Depthwise means each channel is convolved independently &mdash; no cross-channel computation.
+      </div>
+    </div>
+
+    <p>PyTorch (<code>F.conv3d</code> via MIOpen/ROCm) runs this in <strong>5.8ms</strong>. The challenge: depthwise conv has no cross-channel computation (groups=512), which limits which GPU hardware features can help. Can AI find optimizations a human engineer missed?</p>
+  </div>
+</section>
+
+<!-- ── 1b. SETUP ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">1.1</span> What AI Was Given</h2>
+    <p class="lead">Human provides context declaratively. AI reads, implements, self-corrects. Human verifies.</p>
+    <div class="setup-grid">
+      <div class="setup-card">
+        <h4>task.md</h4>
+        <p>Problem definition: conv3d shapes, PyTorch reference code. 33 lines. "Here's the problem, go."</p>
+      </div>
+      <div class="setup-card">
+        <h4>gpu_arch/</h4>
+        <p>CDNA3/4 ISA, LDS sizes, instruction throughput, roofline analysis. The source of truth for hardware facts.</p>
+      </div>
+      <div class="setup-card">
+        <h4>rocprofv3</h4>
+        <p>PMC hardware counters + instruction-level thread trace. AI measures bottlenecks, doesn't guess.</p>
+      </div>
+    </div>
+    <div class="insight">Human shows reference kernels <strong>declaratively</strong>: "read this hipconv code", "check fused_mlp.py" &mdash; points to good work, doesn't prescribe what to extract. Human owns final verification: correctness against PyTorch, reproducible timing.</div>
+  </div>
+</section>
+
+<!-- ── 2. JOURNEY ── -->
+<section>
+  <div class="col" style="position:relative">
+    <h2><span class="num">2</span> The Optimization Journey</h2>
+    <p class="lead">Five steps, five distinct algorithms. The failures teach as much as the wins.</p>
+
+    <!-- Chart -->
+    <figure>
+      <div class="chart" id="chart">
+        <div class="chart-head"><span>Kernel execution time</span><span>ms (lower is better)</span></div>
+        <div class="row"><div class="row-l">PyTorch<small>MIOpen/ROCm</small></div><div class="bar-bg"><div class="bar bar-n" data-w="40.3"></div></div><div class="row-v">5.81<small>1.0x</small></div></div>
+        <div class="row"><div class="row-l">Step 1<small>Naive</small></div><div class="bar-bg"><div class="bar bar-n" data-w="35.7"></div></div><div class="row-v">5.14<small>1.1x</small></div></div>
+        <div class="row"><div class="row-l">Step 2<small>NHWC</small></div><div class="bar-bg"><div class="bar bar-n" data-w="8.1"></div></div><div class="row-v">1.17<small>5.0x</small></div></div>
+        <div class="row"><div class="row-l">Step 3<small>NCHW+LDS</small></div><div class="bar-bg"><div class="bar bar-n" data-w="4.3"></div></div><div class="row-v">0.62<small>9.4x</small></div></div>
+        <div class="row fail"><div class="row-l">Step 4<small>MFMA</small></div><div class="bar-bg"><div class="bar bar-f" data-w="100"></div></div><div class="row-v">14.4<small>0.4x</small></div></div>
+        <div class="row win"><div class="row-l">Step 5<small>SGB</small></div><div class="bar-bg"><div class="bar bar-w" data-w="3.75"></div></div><div class="row-v">0.54<small>10.7x</small></div></div>
+      </div>
+      <figcaption><strong>Figure 1.</strong> Execution time for each kernel variant. Step 4 (MFMA) is a deliberate failure &mdash; correct results but slower. Step 5 (SGB) is the AI-discovered breakthrough. 200 iterations, bf16, MI350X.</figcaption>
+    </figure>
+
+    <!-- Step 1 -->
+    <div class="step" style="position:relative">
+      <div class="step-head"><h3>Step 1: Naive Baseline</h3><span class="step-time">5.14ms &middot; 1.1x</span></div>
+      <p>One thread computes one output pixel. Each thread independently reads 75 input values and 75 weights from global memory, with boundary checks per tap. No data sharing between threads.</p>
+      <div class="insight">Roughly the same speed as PyTorch's MIOpen. <strong>The obvious approach is not enough.</strong></div>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Resources</span>
+        22 VGPRs, occupancy 8, no LDS. AI reads <code>gpu_arch/quick_reference.md</code> to learn: global memory ~500 cycles, LDS ~50 cycles.
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step" style="position:relative">
+      <div class="step-head"><h3>Step 2: NHWC Layout</h3><span class="step-time">1.17ms &middot; 5.0x</span></div>
+      <p>NHWC layout makes adjacent threads access adjacent channels &mdash; coalesced 128-byte global reads. Each thread handles 8 channels at one spatial position. 5x faster, but each thread still reads 75 values independently.</p>
+      <div class="insight"><strong>Coalescing gives 5x,</strong> but each thread still does 75 independent global reads. For large filters, data reuse matters more than memory layout.</div>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Resources</span>
+        46 VGPRs, occupancy 8, no LDS. 512 threads/block, 8 spatial positions, 64 threads per spatial.
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step" style="position:relative">
+      <div class="step-head"><h3>Step 3: NCHW + LDS Cache</h3><span class="step-time">0.62ms &middot; 9.4x</span></div>
+      <p>Switch back to NCHW. 256 threads cooperatively load the input tile into LDS (Local Data Share, 160KB/CU on MI350X), then each thread reads from fast LDS. Weights cached in 75 float VGPRs. Data loaded once, reused by all threads. This is the <strong>hand-tuned production kernel</strong>.</p>
+      <pre><span class="g">256 threads cooperate:</span>
+HBM &rArr; LDS [3&times;49&times;84 bf16]    <span class="g">&larr; loaded once, shared</span>
+HBM &rarr; Regs [75 weights]        <span class="g">&larr; per-thread, reused</span>
+LDS &rarr; 45 ds_read_b32 &rarr; 150 v_fmac_f32 &rarr; store</pre>
+      <div class="insight">AI profiles with rocprofv3 thread trace: <strong>33.6% FMA, 20.6% bf16 extraction, 13.3% NOP.</strong> Over half the cycles are not compute. Can we do better?</div>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Resources</span>
+        155 VGPRs, occupancy 3, 32KB LDS. LDS = Local Data Share &mdash; fast on-chip memory shared within a workgroup. 160KB per CU on MI350X (2.5x larger than CDNA3's 64KB).
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step fail" style="position:relative">
+      <div class="step-head"><h3>Step 4: MFMA Matrix Engine</h3><span class="step-time">14.4ms &middot; 0.4x</span></div>
+      <p>AI studied the <code>hipconv</code> grouped convolution library and found the Toeplitz matrix + MFMA technique: reformulate the width convolution as a matrix multiply and use <code>v_mfma_f32_4x4x4f16</code> (batch=16) to process 16 channels simultaneously. Produces correct results but is <strong>6x slower</strong> than Step 3.</p>
+      <p><strong>Why it failed:</strong> For depthwise conv (1 channel per group), loading 16 channels' data costs 16x more, but compute speeds up at most 16x &mdash; net zero. With only 64 threads (1 wave), cooperative LDS loading is 4x slower than Step 3's 256 threads.</p>
+      <div class="insight fail"><strong>Not every clever idea works.</strong> MFMA is powerful for grouped conv (cpg&ge;4) but useless for depthwise (cpg=1). The failure teaches <em>when</em> a technique applies.</div>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Resources</span>
+        101 VGPRs, occupancy 2, 21KB LDS, 560B scratch (spills). MFMA = Matrix Fused Multiply-Add, a dedicated matrix engine separate from VALU.
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step win" style="position:relative">
+      <div class="step-head"><h3>Step 5: sched_group_barrier</h3><span class="step-time">0.54ms &middot; 10.7x</span></div>
+      <p>AI read <code>fused_mlp.py</code> (a Triton+Gluon fused MLP kernel) and found <code>sched_group_barrier</code>: a compiler hint that forces LLVM to interleave LDS reads with VALU compute, instead of batching all reads then all computes.</p>
+      <p>Two changes from Step 3:</p>
+      <pre><span class="c">Step 3:</span> ds_read &times;45 &rarr; waitcnt &rarr; v_fmac &times;150    <span class="r">(batch all)</span>
+<span class="c">Step 5:</span> for each of 15 filter rows:              <span class="g">(interleave)</span>
+          ds_read &times;3
+          <span class="g">sched_group_barrier(DS_READ, 3)</span>
+          <span class="g">sched_group_barrier(VALU, 10)</span>
+          waitcnt &rarr; v_fmac &times;10</pre>
+      <p>Results are <strong>bitwise identical</strong> to Step 3 &mdash; same algorithm, better instruction scheduling. 14% faster.</p>
+      <div class="insight win">The same interleaving idea was tried in a JIT kernel earlier &mdash; <strong>it failed</strong> (no compiler hints). It only worked in HIP C++ with <code style="font-family:var(--mono);font-size:13px">sched_group_barrier</code>. The <strong>how</strong> matters as much as the <strong>what</strong>.</div>
+      <div class="mn" style="top:0">
+        <span class="mn-label">Resources</span>
+        86 VGPRs (down from 155), occupancy 5 (up from 3), 0 spills. Only 3 input regs per row instead of 45 batched.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. DISCOVERY ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">3</span> How AI Found What Humans Missed</h2>
+    <p class="lead">The breakthrough came from reading a completely unrelated kernel.</p>
+
+    <div class="flow">
+      <div class="flow-node">
+        <h4>Source</h4>
+        <p><code>fused_mlp.py</code> &mdash; a Triton+Gluon fused MLP kernel that uses <code>sched_group_barrier</code> to interleave VMEM reads with MFMA compute.</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node">
+        <h4>Pattern extracted</h4>
+        <p>AI recognizes: this interleaving principle applies to <strong>DS_read + VALU</strong> in the depthwise conv kernel, not just VMEM + MFMA.</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node">
+        <h4>Result</h4>
+        <p>14% faster. The same interleaving idea had been tried in a JIT kernel (failed &mdash; no compiler hints). Succeeded in HIP C++ with <code>sched_group_barrier</code>.</p>
+      </div>
+    </div>
+
+    <figure>
+      <figcaption><strong>Figure 2.</strong> Cross-codebase learning: a technique from fused MLP applied to depthwise convolution. The key was not just the code restructuring, but the compiler scheduling hint.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ── 3.1. DEAD ENDS ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">3.1</span> It Wasn't a Straight Line</h2>
+    <p class="lead">Between Steps 3 and 5, AI explored 12 optimization ideas. Most failed. Each failure narrowed the search space.</p>
+    <div class="dead-ends">
+      <div class="dead-end"><span class="name">v_dot2_f32_bf16 in HIP</span><span class="result">WRONG &mdash; compiler register bug</span></div>
+      <div class="dead-end"><span class="name">Row-chunk streaming (V104)</span><span class="result">2.5x slower &mdash; barrier overhead</span></div>
+      <div class="dead-end"><span class="name">Compiler pointer reads (V104b)</span><span class="result">2.1x slower &mdash; ds_read_u16 bloat</span></div>
+      <div class="dead-end"><span class="name">NHWC weight tiling (V105)</span><span class="result">2.0x slower &mdash; no input reuse</span></div>
+      <div class="dead-end"><span class="name">ds_read_b64 wider reads</span><span class="result">4.2x slower &mdash; gfx950 penalty</span></div>
+      <div class="dead-end"><span class="name">Software pipeline by depth</span><span class="result">No improvement</span></div>
+      <div class="dead-end"><span class="name">KW_PACK=4 (4 outputs/iter)</span><span class="result">WRONG &mdash; indexing bug</span></div>
+      <div class="dead-end"><span class="name">JIT row-interleave (same idea!)</span><span class="result">3% slower &mdash; no compiler hints</span></div>
+      <div class="dead-end"><span class="name">MFMA Toeplitz 16-channel</span><span class="result">6x slower &mdash; data loading dominates</span></div>
+      <div class="dead-end"><span class="name">v_pk_fma_f32 packed ops</span><span class="result">WRONG &mdash; bf16 format mismatch</span></div>
+    </div>
+    <div class="insight"><strong>20+ kernel variants, 12 phases, most of them failures.</strong> The winning technique came from reading a completely unrelated kernel (fused_mlp.py). AI's advantage: it can explore at scale without fatigue.</div>
+  </div>
+</section>
+
+<!-- ── 4. COLLABORATION ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">4</span> Human-AI Collaboration</h2>
+    <p class="lead">Human provides context declaratively. AI reads, implements, self-corrects. Human verifies.</p>
+
+    <div class="collab">
+      <div class="collab-box">
+        <h4>Human (declarative)</h4>
+        <ul>
+          <li>Defines problem via <code>task.md</code></li>
+          <li>Provides hardware docs (<code>gpu_arch/</code>)</li>
+          <li>Shows reference kernels: "read this hipconv", "check fused_mlp"</li>
+          <li>Challenges claims: "where's the source?"</li>
+          <li>Owns final verification: PyTorch correctness + timing</li>
+        </ul>
+      </div>
+      <div class="collab-box">
+        <h4>AI (autonomous)</h4>
+        <ul>
+          <li>Reads ISA docs and architecture references at scale</li>
+          <li>Studies reference kernels, extracts techniques</li>
+          <li>Proposes, implements, and benchmarks variants</li>
+          <li>Profiles with <code>rocprofv3</code> (PMC + thread trace)</li>
+          <li>Self-corrects when evidence contradicts claims</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Key moments</h3>
+    <div style="border:1px solid var(--border);background:var(--paper)">
+      <div class="moment"><div class="m-h">"Read hipconv group_conv"</div><div class="m-arr">&rarr;</div><div class="m-a">AI extracts Toeplitz+MFMA. Step 4 &mdash; failed, but learned why</div></div>
+      <div class="moment"><div class="m-h">"Read fused_mlp.py"</div><div class="m-arr">&rarr;</div><div class="m-a">AI extracts sched_group_barrier. <strong>Step 5 &mdash; breakthrough</strong></div></div>
+      <div class="moment"><div class="m-h">"Where did you find LGKM queue overflow?"</div><div class="m-arr">&rarr;</div><div class="m-a">AI traces to vm_cnt.md &mdash; it was an unverified guess. Corrected</div></div>
+      <div class="moment"><div class="m-h">"What is actual LDS size?"</div><div class="m-arr">&rarr;</div><div class="m-a">AI queries rocminfo. Found <strong>160KB</strong> not 64KB. Analysis fixed</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. CORRECTIONS ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">5</span> Self-Corrections</h2>
+    <p class="lead">AI made confident claims. Human challenged. AI traced to sources and corrected.</p>
+
+    <div class="cor">
+      <h4>LDS Size</h4>
+      <div class="wrong">64 KB per CU (assumed from CDNA3 documentation)</div>
+      <div class="right">160 KB per CU (verified via <code>rocminfo</code> GROUP segment)</div>
+      <p>MI350X (CDNA4) has 2.5x more LDS than CDNA3. This changed the entire occupancy analysis.</p>
+    </div>
+    <div class="cor">
+      <h4>LGKM Queue Depth</h4>
+      <div class="wrong">"16-entry LGKM queue overflows when batching 45 ds_reads"</div>
+      <div class="right">Unverified guess &mdash; <code>vm_cnt.md</code> only tested VMEM queue, not LDS</div>
+      <p>The source confirmed VMEM has a 64-entry queue but only guessed LDS works similarly, noting "that causes no stall most-likely." LDS queue depth was never measured. Claim retracted.</p>
+    </div>
+    <div class="cor">
+      <h4>Compiler Occupancy</h4>
+      <div class="wrong">Compiler reports occupancy 5, so runtime occupancy is 5</div>
+      <div class="right">Compiler reports only the VGPR limit &mdash; LDS constraint applied at runtime</div>
+      <p>Actual runtime occupancy = min(VGPR limit, LDS limit). On MI350X with 160KB LDS, both happen to give 5, so the number was coincidentally correct.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. RESULTS ── -->
+<section>
+  <div class="col">
+    <h2><span class="num">6</span> Results</h2>
+    <p>All kernels verified against PyTorch <code>F.conv3d</code> (max diff = 0.25, normal bf16 rounding).</p>
+
+    <table class="tbl">
+      <thead><tr><th>Kernel</th><th>Time</th><th>Speedup</th><th>Key technique</th></tr></thead>
+      <tbody>
+        <tr><td>PyTorch</td><td>5.81 ms</td><td>1.0x</td><td>MIOpen / ROCm baseline</td></tr>
+        <tr><td>Step 1: Naive</td><td>5.14 ms</td><td>1.1x</td><td>1 thread = 1 output, global memory</td></tr>
+        <tr><td>Step 2: NHWC</td><td>1.17 ms</td><td>5.0x</td><td>Coalesced channels, no data reuse</td></tr>
+        <tr><td>Step 3: NCHW+LDS</td><td>0.62 ms</td><td>9.4x</td><td>Cooperative LDS cache, weight registers</td></tr>
+        <tr class="f"><td>Step 4: MFMA</td><td>14.40 ms</td><td>0.4x</td><td>Matrix engine Toeplitz (failure)</td></tr>
+        <tr class="w"><td>Step 5: SGB</td><td>0.54 ms</td><td>10.7x</td><td>sched_group_barrier + row interleave</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Reproduce</h3>
+    <pre>cd EvoKernel
+bash demo.sh              <span class="c"># default: 100 iterations</span>
+bash demo.sh --iters 200  <span class="c"># more stable timing</span></pre>
+    <p style="font-size:14px;color:var(--tx3)">Requires: AMD MI300X/MI350X (gfx942/gfx950), ROCm, PyTorch with ROCm support.</p>
+
+    <p style="margin-top:24px">The full 12-phase optimization journey &mdash; including assembly patching, JIT rewrites, 6 LDS optimization variants, and all the dead ends &mdash; is documented in <a href="optimization_trajectory.md" style="color:var(--blue)">optimization_trajectory.md</a>.</p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer><p>EvoKernel &middot; Built with Claude Code + human judgment &middot; AMD MI350X (CDNA4 / gfx950)</p></footer>
+
+<script>
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.bar').forEach(b=>{b.style.width=b.dataset.w+'%'});
+      obs.unobserve(e.target);
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('#chart').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

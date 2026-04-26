@@ -1,0 +1,27 @@
+GPU:     AMD Instinct MI350X
+Input:   [1, 512, 61, 45, 80] bf16
+Weight:  [512, 1, 3, 5, 5] bf16
+Output:  [1, 512, 59, 45, 80] bf16
+Padding: (0, 2, 2)  Groups: 512  GFLOPs: 16.31
+
+========================================================================
+CORRECTNESS vs PyTorch F.conv3d
+========================================================================
+  Step1: Naive        : max_diff=2.500000e-01  PASS
+  Step2: NHWC         : max_diff=2.500000e-01  PASS
+  Step3: NCHW+LDS     : max_diff=2.500000e-01  PASS
+  Step4: MFMA         : max_diff=2.500000e-01  PASS
+  Step5: SGB          : max_diff=2.500000e-01  PASS
+
+========================================================================
+BENCHMARK (200 iterations)
+========================================================================
+
+Kernel                  Time (ms)  vs PyTorch  Speedup
+-------------------------------------------------------
+PyTorch                    5.8142        1.0x
+Step1: Naive               5.1441        1.1x
+Step2: NHWC                1.1732        5.0x
+Step3: NCHW+LDS            0.6158        9.4x
+Step4: MFMA               14.3955        0.4x
+Step5: SGB                 0.5416       10.7x

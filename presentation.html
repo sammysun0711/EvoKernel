@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EvoKernel Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#fafaf8;--paper:#fff;--bd:#e0ddd5;--bd2:#eceae2;
+  --tx:#1a1a1a;--tx2:#555;--tx3:#888;--tx4:#aaa;
+  --red:#c7402d;--green:#2d7d46;--blue:#2d5fa0;
+  --code-bg:#f5f4f0;
+  --serif:'Source Serif 4',Georgia,serif;
+  --sans:'Source Sans 3','Helvetica Neue',sans-serif;
+  --mono:'JetBrains Mono','Menlo',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#e8e6e0;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:rgba(199,64,45,.15)}
+
+.viewport{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+.deck{width:1920px;height:1080px;position:relative;transform-origin:center center;background:var(--bg);overflow:hidden;border:1px solid var(--bd)}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:100px 140px;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.slide.active{opacity:1;pointer-events:auto}
+
+/* Progress */
+.progress{position:fixed;bottom:0;left:0;right:0;height:2px;background:rgba(0,0,0,.06);z-index:100}
+.progress-fill{height:100%;background:var(--red);transition:width .4s ease}
+.slide-num{position:fixed;bottom:14px;right:28px;font-family:var(--mono);font-size:12px;color:var(--tx4);z-index:100}
+.nav-hint{position:fixed;bottom:14px;left:28px;font-family:var(--mono);font-size:10px;color:var(--tx4);z-index:100;opacity:.4}
+
+/* Slide elements */
+.s-tag{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tx4);margin-bottom:20px}
+.s-title{font-family:var(--serif);font-size:56px;font-weight:700;line-height:1.15;letter-spacing:-.02em;color:var(--tx);margin-bottom:20px}
+.s-title em{font-style:normal;color:var(--green)}
+.s-title .fail-em{font-style:normal;color:var(--red)}
+.s-sub{font-size:24px;color:var(--tx2);line-height:1.6;max-width:900px}
+.s-rule{width:80px;height:2px;background:var(--bd);margin:28px 0}
+
+/* Two columns */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;flex:1}
+
+/* Code */
+.code{font-family:var(--mono);font-size:17px;line-height:1.8;color:var(--tx2);background:var(--code-bg);border:1px solid var(--bd2);padding:28px 32px;white-space:pre}
+.code .c{color:var(--blue)}
+.code .g{color:var(--green)}
+.code .r{color:var(--red)}
+
+/* Big number */
+.big-num{font-family:var(--serif);font-size:140px;font-weight:700;line-height:1;color:var(--tx)}
+.big-label{font-family:var(--mono);font-size:16px;color:var(--tx3);margin-top:8px;letter-spacing:.05em}
+
+/* Metric inline */
+.metric{display:flex;align-items:baseline;gap:12px;margin-top:28px}
+.metric-val{font-family:var(--serif);font-size:64px;font-weight:700;line-height:1}
+.metric-unit{font-family:var(--mono);font-size:16px;color:var(--tx3)}
+
+/* Bar chart */
+.bar-chart{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1}
+.b-row{display:grid;grid-template-columns:150px 1fr 110px;align-items:center;gap:16px}
+.b-label{font-family:var(--mono);font-size:15px;color:var(--tx2)}
+.b-track{height:24px}
+.b-fill{height:100%;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.b-fill.n{background:#bbb}
+.b-fill.f{background:var(--red)}
+.b-fill.w{background:var(--green)}
+.b-val{font-family:var(--mono);font-size:16px;font-weight:500;text-align:right;color:var(--tx2)}
+.b-val small{font-size:12px;color:var(--tx4);margin-left:4px}
+.b-row.fail .b-label,.b-row.fail .b-val{color:var(--red)}
+.b-row.win .b-label,.b-row.win .b-val{color:var(--green)}
+
+/* Cards */
+.card{border:1px solid var(--bd);padding:36px;background:var(--paper)}
+.card h3{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:6px}
+.card p{font-size:20px;color:var(--tx2);line-height:1.6}
+.card .time{font-family:var(--mono);font-size:14px;color:var(--tx3);margin-bottom:12px}
+
+/* Badge */
+.badge{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;display:inline-block;margin-top:12px}
+.badge-f{color:var(--red);border:1px solid rgba(199,64,45,.25)}
+.badge-w{color:var(--green);border:1px solid rgba(45,125,70,.25)}
+
+/* Flow */
+.flow-h{display:flex;align-items:stretch;gap:0;border:1px solid var(--bd)}
+.flow-h .node{flex:1;padding:28px;background:var(--paper)}
+.flow-h .node:not(:last-child){border-right:1px solid var(--bd2)}
+.flow-h .node h4{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--tx4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.flow-h .node p{font-size:18px;color:var(--tx2);line-height:1.6;margin:0}
+.flow-h .arrow{display:flex;align-items:center;padding:0 6px;font-size:20px;color:var(--tx4)}
+
+/* Moment rows */
+.m-row{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;padding:14px 0;border-bottom:1px solid var(--bd2);font-size:20px}
+.m-row:last-child{border:none}
+.m-h{color:var(--tx2);text-align:right;font-style:italic;font-family:var(--serif)}
+.m-arr{text-align:center;color:var(--tx4);font-family:var(--mono)}
+.m-a{color:var(--tx2)}
+.m-a strong{color:var(--green);font-weight:600}
+
+/* Collab */
+.collab-pair{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.col-box{border:1px solid var(--bd);padding:28px 32px;background:var(--paper)}
+.col-box h4{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--tx4);margin-bottom:16px}
+.col-box li{font-size:18px;color:var(--tx2);list-style:none;padding:5px 0 5px 20px;position:relative;line-height:1.5}
+.col-box li::before{content:'\203A';position:absolute;left:0;color:var(--tx4);font-family:var(--mono)}
+
+/* Correction cards */
+.cor-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.cor{border:1px solid var(--bd);padding:28px;background:var(--paper);border-top:2px solid var(--red)}
+.cor h4{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--tx4);margin-bottom:10px}
+.cor .wrong{font-size:17px;color:var(--red);margin-bottom:4px}
+.cor .wrong::before{content:'\2717 ';font-size:13px}
+.cor .right{font-size:17px;color:var(--green);margin-bottom:10px}
+.cor .right::before{content:'\2713 ';font-size:13px}
+.cor p{font-size:15px;color:var(--tx3);line-height:1.6;margin:0}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:19px}
+.tbl th{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--tx4);text-align:left;padding:10px 14px;border-bottom:2px solid var(--bd)}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--bd2);color:var(--tx2)}
+.tbl td:nth-child(2),.tbl td:nth-child(3){font-family:var(--mono);font-size:17px}
+.tbl tr.f td{color:var(--red)}
+.tbl tr.w td{color:var(--green);font-weight:600}
+
+/* Insight callout */
+.insight{border-left:3px solid var(--blue);padding:12px 20px;background:rgba(45,95,160,.04);margin-top:16px;font-size:19px;color:var(--tx2);line-height:1.6;font-style:italic;font-family:var(--serif)}
+.insight strong{color:var(--tx);font-weight:600;font-style:normal}
+
+/* Quote */
+.quote{font-family:var(--serif);font-size:28px;font-style:italic;color:var(--tx2);line-height:1.5;max-width:800px;margin:20px 0}
+.quote em{font-style:normal;color:var(--tx)}
+.quote-src{font-family:var(--mono);font-size:13px;color:var(--tx4);margin-top:8px;font-style:normal}
+
+/* Stats row */
+.stats{display:flex;gap:48px;margin-top:28px}
+.stat{text-align:left}
+.stat-num{font-family:var(--serif);font-size:48px;font-weight:700;line-height:1}
+.stat-label{font-family:var(--mono);font-size:12px;color:var(--tx3);margin-top:4px;letter-spacing:.05em;text-transform:uppercase}
+
+/* Three col equal */
+.three-eq{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:24px}
+.three-eq .card{padding:28px}
+
+/* Fail montage */
+.fail-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.fail-item{font-size:16px;color:var(--tx3);padding:10px 16px;border:1px solid var(--bd2);background:var(--paper);display:flex;justify-content:space-between;align-items:center}
+.fail-item .name{color:var(--tx2)}
+.fail-item .result{font-family:var(--mono);font-size:14px;color:var(--red)}
+</style>
+</head>
+<body>
+
+<div class="viewport">
+<div class="deck" id="deck">
+
+<!-- 01 TITLE -->
+<div class="slide active" data-screen-label="01 Title">
+  <div class="s-tag">EvoKernel</div>
+  <div class="s-title" style="font-size:64px">AI reads 10 GPU kernels,<br><em>beats the hand-tuned best</em></div>
+  <div class="s-rule"></div>
+  <p class="s-sub">3D depthwise convolution on AMD Instinct MI350X</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">5.8ms</div><div class="stat-label">PyTorch</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--tx3)">&rarr;</div><div class="stat-label">&nbsp;</div></div>
+    <div class="stat"><div class="stat-num">0.61ms</div><div class="stat-label">Hand-tuned (Human)</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--tx3)">&rarr;</div><div class="stat-label">&nbsp;</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--green)">0.54ms</div><div class="stat-label">AI-optimized</div></div>
+  </div>
+</div>
+
+<!-- 02 PROBLEM -->
+<div class="slide" data-screen-label="02 Problem">
+  <div class="s-tag">1. The Problem</div>
+  <div class="s-title" style="font-size:44px">3D Depthwise Convolution</div>
+  <div class="two-col" style="margin-top:36px">
+    <div>
+      <div class="code" style="font-size:18px"><span class="c">Input:   [1, 512, 61, 45, 80]  bf16</span>
+<span class="c">Weight:  [512, 1, 3, 5, 5]     bf16</span>
+<span class="c">Output:  [1, 512, 59, 45, 80]  bf16</span>
+
+Groups:  512   Padding: (0,2,2)
+GFLOPs:  16.31</div>
+      <p style="font-size:18px;color:var(--tx2);margin-top:16px">Each output pixel: 75 multiply-accumulate ops (3&times;5&times;5 filter). Used in video models, 3D segmentation, and efficient architectures.</p>
+      <div class="insight" style="margin-top:20px">The challenge: depthwise conv has <strong>no cross-channel computation</strong> (groups=512). Each channel is independent. This limits which GPU hardware features can help.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center">
+      <p style="font-family:var(--mono);font-size:14px;color:var(--tx4);letter-spacing:.08em;text-transform:uppercase">PyTorch baseline</p>
+      <div class="big-num" style="margin-top:8px">5.8<span style="font-size:48px;color:var(--tx3)">ms</span></div>
+      <p style="font-size:17px;color:var(--tx3);margin-top:12px">MIOpen / ROCm on MI350X (CDNA4 / gfx950)</p>
+      <p style="font-size:15px;color:var(--tx4);margin-top:24px">Can AI do better than both PyTorch and a human expert?</p>
+    </div>
+  </div>
+</div>
+
+<!-- 02b SETUP -->
+<div class="slide" data-screen-label="02b Setup">
+  <div class="s-tag">What AI Was Given</div>
+  <div class="s-title" style="font-size:44px">The Setup</div>
+  <div class="three-eq">
+    <div class="card">
+      <h3 style="font-size:20px">task.md</h3>
+      <div class="time">Problem definition</div>
+      <p style="font-size:17px">Conv3d shapes, PyTorch reference code. 33 lines. "Here's the problem, go."</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:20px">gpu_arch/</h3>
+      <div class="time">Hardware specs</div>
+      <p style="font-size:17px">CDNA3/4 ISA, LDS sizes, instruction throughput, roofline analysis. The source of truth.</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:20px">rocprofv3</h3>
+      <div class="time">Profiling tools</div>
+      <p style="font-size:17px">PMC hardware counters + instruction-level thread trace. AI measures, not guesses.</p>
+    </div>
+  </div>
+  <div class="insight" style="margin-top:32px">Human shows reference kernels <strong>declaratively</strong>: "read this hipconv code", "check fused_mlp.py" &mdash; doesn't prescribe what to extract. Human owns final verification: correctness against PyTorch, reproducible timing.</div>
+</div>
+
+<!-- 03 STEP 1 -->
+<div class="slide" data-screen-label="03 Step 1">
+  <div class="s-tag">Step 1</div>
+  <div class="s-title" style="font-size:44px">Naive Baseline</div>
+  <div class="two-col" style="margin-top:28px">
+    <div>
+      <p style="font-size:22px;color:var(--tx2);line-height:1.7;margin-bottom:20px">One thread computes one output pixel. Each thread independently reads 75 inputs + 75 weights from global memory with boundary checks per tap.</p>
+      <p style="font-family:var(--mono);font-size:14px;color:var(--tx3)">22 VGPRs &middot; Occupancy 8 &middot; 0 LDS</p>
+      <div class="insight">Roughly the same speed as PyTorch's MIOpen. <strong>The obvious approach is not enough.</strong></div>
+      <div class="metric">
+        <span class="metric-val">5.14</span>
+        <span class="metric-unit">ms &middot; 1.1x faster than PyTorch</span>
+      </div>
+    </div>
+    <div>
+      <div class="code"><span class="c">Thread N:</span>
+global &rarr; load 75 inputs   <span class="r">(slow)</span>
+global &rarr; load 75 weights  <span class="r">(slow)</span>
+for each tap:
+  <span class="r">if (in_bounds):</span>
+    acc += w * in
+global &larr; store output</div>
+    </div>
+  </div>
+</div>
+
+<!-- 04 STEP 2 -->
+<div class="slide" data-screen-label="04 Step 2">
+  <div class="s-tag">Step 2</div>
+  <div class="s-title" style="font-size:44px">NHWC Memory Layout</div>
+  <div class="two-col" style="margin-top:28px">
+    <div>
+      <p style="font-size:22px;color:var(--tx2);line-height:1.7;margin-bottom:20px">NHWC layout: adjacent threads access adjacent channels. Coalesced 128-byte reads. 5x faster, but each thread still reads 75 values independently. No data reuse.</p>
+      <div class="insight"><strong>Coalescing gives 5x,</strong> but each thread still does 75 independent global reads. For large filters, data reuse matters more than memory layout.</div>
+      <div class="metric">
+        <span class="metric-val">1.17</span>
+        <span class="metric-unit">ms &middot; 5.0x</span>
+      </div>
+    </div>
+    <div>
+      <div class="code"><span class="c">64 threads at spatial S:</span>
+T0: ch[0..7]    |
+T1: ch[8..15]   | <span class="g">coalesced</span>
+T2: ch[16..23]  | <span class="g">128B read</span>
+...             |
+Each: 75 global loads
+      <span class="r">no reuse across threads</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 05 STEP 3 -->
+<div class="slide" data-screen-label="05 Step 3">
+  <div class="s-tag">Step 3 &mdash; Hand-tuned Best</div>
+  <div class="s-title" style="font-size:44px">NCHW + LDS Cache</div>
+  <div class="two-col" style="margin-top:28px">
+    <div>
+      <p style="font-size:22px;color:var(--tx2);line-height:1.7;margin-bottom:16px">256 threads cooperatively load input into LDS (fast on-chip memory). Each thread reads from LDS. Weights cached in 75 float VGPRs. Data loaded once, reused by all.</p>
+      <p style="font-family:var(--mono);font-size:14px;color:var(--tx3)">155 VGPRs &middot; Occupancy 3 &middot; 32KB LDS</p>
+      <div class="insight">AI profiles with rocprofv3 thread trace:<br><strong>33.6% FMA, 20.6% bf16 extraction, 13.3% NOP.</strong> Over half the cycles are NOT compute. Can we do better?</div>
+      <div class="metric">
+        <span class="metric-val">0.62</span>
+        <span class="metric-unit">ms &middot; 9.4x &mdash; the production kernel</span>
+      </div>
+    </div>
+    <div>
+      <div class="code"><span class="g">256 threads cooperate:</span>
+HBM &rArr; LDS [3&times;49&times;84 bf16]
+       <span class="g">&uarr; loaded once, shared</span>
+
+HBM &rarr; Regs [75 weights]
+       <span class="g">&uarr; per-thread, reused</span>
+
+LDS &rarr; 45 ds_read_b32
+    &rarr; 150 v_fmac_f32
+    &rarr; global_store</div>
+    </div>
+  </div>
+</div>
+
+<!-- 06 STEP 4 (FAILURE) -->
+<div class="slide" data-screen-label="06 Step 4">
+  <div class="s-tag" style="color:var(--red)">Step 4 &mdash; Failure</div>
+  <div class="s-title" style="font-size:44px">MFMA Matrix Engine</div>
+  <div class="two-col" style="margin-top:28px">
+    <div>
+      <p style="font-size:22px;color:var(--tx2);line-height:1.7;margin-bottom:16px">AI studied hipconv grouped convolution. Reformulated width convolution as Toeplitz matrix multiply. Packs 16 channels into MFMA batch=16.</p>
+      <p style="font-size:22px;color:var(--red);font-weight:600;margin-bottom:16px">Correct results but 6x slower.</p>
+      <p style="font-size:20px;color:var(--tx2);line-height:1.7">Loading 16 channels costs 16x more data. Only 64 threads (vs 256) for cooperative loading.</p>
+      <div class="insight" style="border-color:var(--red)"><strong>Not every clever idea works.</strong> MFMA is powerful for grouped conv (cpg&ge;4) but useless for depthwise (cpg=1). The failure teaches <em>when</em> a technique applies.</div>
+      <div class="metric">
+        <span class="metric-val" style="color:var(--red)">14.4</span>
+        <span class="metric-unit" style="color:var(--red)">ms &middot; 0.4x &mdash; 6x slower!</span>
+      </div>
+    </div>
+    <div>
+      <div class="code"><span class="r">Toeplitz F(4,5):</span>
+[g0 g1 g2 g3 g4  .  .  .]
+[ . g0 g1 g2 g3 g4  .  .]
+[ .  . g0 g1 g2 g3 g4  .]
+[ .  .  . g0 g1 g2 g3 g4]
+
+<span class="r">16ch data = 16&times; LDS load</span>
+<span class="r">Only 64 threads (vs 256)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 07 STEP 5 (BREAKTHROUGH) -->
+<div class="slide" data-screen-label="07 Step 5">
+  <div class="s-tag" style="color:var(--green)">Step 5 &mdash; Breakthrough</div>
+  <div class="s-title" style="font-size:44px">sched_group_barrier</div>
+  <div class="two-col" style="margin-top:28px">
+    <div>
+      <p style="font-size:22px;color:var(--tx2);line-height:1.7;margin-bottom:16px">AI read <code style="font-family:var(--mono);color:var(--blue)">fused_mlp.py</code> and found <code style="font-family:var(--mono);color:var(--blue)">sched_group_barrier</code>: a compiler hint that forces LLVM to interleave LDS reads with VALU compute.</p>
+      <p style="font-size:20px;color:var(--green);font-weight:600">Bitwise identical to Step 3. 14% faster. Same algorithm, better scheduling.</p>
+      <div class="insight" style="border-color:var(--green)">The same interleaving idea was tried in a JIT kernel earlier &mdash; <strong>it failed</strong> (no compiler hints). It only worked in HIP C++ with <code style="font-family:var(--mono);font-size:16px">sched_group_barrier</code>. The <strong>how</strong> matters as much as the <strong>what</strong>.</div>
+      <div style="display:flex;gap:48px;margin-top:16px">
+        <div><p style="font-family:var(--mono);font-size:13px;color:var(--tx4)">VGPRs</p><p style="font-family:var(--serif);font-size:28px;font-weight:700">155 &rarr; 86</p></div>
+        <div><p style="font-family:var(--mono);font-size:13px;color:var(--tx4)">Occupancy</p><p style="font-family:var(--serif);font-size:28px;font-weight:700">3 &rarr; 5</p></div>
+        <div><p style="font-family:var(--mono);font-size:13px;color:var(--tx4)">Speedup</p><p style="font-family:var(--serif);font-size:28px;font-weight:700;color:var(--green)">+14%</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="code"><span class="g">Per filter row (15 rows):</span>
+ds_read &times;3  <span class="c">&larr; 3 VGPRs (not 45)</span>
+<span class="g">sched_group_barrier(DS, 3)</span>
+<span class="g">sched_group_barrier(VALU, 10)</span>
+s_waitcnt lgkmcnt(0)
+v_fmac &times;10  <span class="g">&larr; overlaps with read</span>
+
+<span class="g">VGPRs: 155 &rarr; 86</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 08 CHART -->
+<div class="slide" data-screen-label="08 Chart">
+  <div class="s-tag">Results</div>
+  <div class="s-title" style="font-size:36px">Performance Comparison</div>
+  <div class="bar-chart" id="pchart">
+    <div class="b-row"><div class="b-label">PyTorch</div><div class="b-track"><div class="b-fill n" data-w="40.3"></div></div><div class="b-val">5.81ms<small>1.0x</small></div></div>
+    <div class="b-row"><div class="b-label">Step 1: Naive</div><div class="b-track"><div class="b-fill n" data-w="35.7"></div></div><div class="b-val">5.14ms<small>1.1x</small></div></div>
+    <div class="b-row"><div class="b-label">Step 2: NHWC</div><div class="b-track"><div class="b-fill n" data-w="8.1"></div></div><div class="b-val">1.17ms<small>5.0x</small></div></div>
+    <div class="b-row"><div class="b-label">Step 3: LDS</div><div class="b-track"><div class="b-fill n" data-w="4.3"></div></div><div class="b-val">0.62ms<small>9.4x</small></div></div>
+    <div class="b-row fail"><div class="b-label">Step 4: MFMA</div><div class="b-track"><div class="b-fill f" data-w="100"></div></div><div class="b-val">14.4ms<small>0.4x</small></div></div>
+    <div class="b-row win"><div class="b-label">Step 5: SGB</div><div class="b-track"><div class="b-fill w" data-w="3.75"></div></div><div class="b-val">0.54ms<small>10.7x</small></div></div>
+  </div>
+  <p style="font-family:var(--mono);font-size:13px;color:var(--tx4);margin-top:16px;text-align:right">200 iterations &middot; bf16 &middot; MI350X (gfx950)</p>
+</div>
+
+<!-- 09 DEAD ENDS -->
+<div class="slide" data-screen-label="09 Dead Ends">
+  <div class="s-tag">3. The Full Picture</div>
+  <div class="s-title" style="font-size:40px">It Wasn't a Straight Line</div>
+  <p class="s-sub" style="margin-bottom:24px">Between Steps 3 and 5, AI explored 12 optimization ideas. Most failed. Each failure narrowed the search space.</p>
+  <div class="fail-list">
+    <div class="fail-item"><span class="name">v_dot2_f32_bf16 in HIP</span><span class="result">WRONG &mdash; compiler register bug</span></div>
+    <div class="fail-item"><span class="name">Row-chunk streaming (V104)</span><span class="result">2.5x slower &mdash; barrier overhead</span></div>
+    <div class="fail-item"><span class="name">Compiler pointer reads (V104b)</span><span class="result">2.1x slower &mdash; ds_read_u16 bloat</span></div>
+    <div class="fail-item"><span class="name">NHWC weight tiling (V105)</span><span class="result">2.0x slower &mdash; no input reuse</span></div>
+    <div class="fail-item"><span class="name">ds_read_b64 wider reads</span><span class="result">4.2x slower &mdash; gfx950 penalty</span></div>
+    <div class="fail-item"><span class="name">Software pipeline by depth</span><span class="result">No improvement</span></div>
+    <div class="fail-item"><span class="name">KW_PACK=4 (4 outputs/iter)</span><span class="result">WRONG &mdash; indexing bug</span></div>
+    <div class="fail-item"><span class="name">JIT row-interleave (same idea!)</span><span class="result">3% slower &mdash; no compiler hints</span></div>
+    <div class="fail-item"><span class="name">MFMA Toeplitz 16-channel</span><span class="result">6x slower &mdash; data loading dominates</span></div>
+    <div class="fail-item"><span class="name">v_pk_fma_f32 packed ops</span><span class="result">WRONG &mdash; bf16 format mismatch</span></div>
+  </div>
+  <div class="insight" style="margin-top:24px"><strong>20+ kernel variants, 12 phases, most of them failures.</strong> The winning technique came from reading a completely unrelated kernel (fused_mlp.py). AI's advantage: it can explore at scale without fatigue.</div>
+</div>
+
+<!-- 10 COLLABORATION -->
+<div class="slide" data-screen-label="10 Workflow">
+  <div class="s-tag">4. Workflow</div>
+  <div class="s-title" style="font-size:36px">Human-AI Collaboration</div>
+  <div class="collab-pair" style="margin-top:28px">
+    <div class="col-box">
+      <h4>Human (Declarative)</h4>
+      <ul>
+        <li>Defines problem via task.md</li>
+        <li>Provides gpu_arch/ hardware docs</li>
+        <li>Shows reference kernels: "read this code"</li>
+        <li>Challenges claims: "where's the source?"</li>
+        <li>Owns final verification</li>
+      </ul>
+    </div>
+    <div class="col-box">
+      <h4>AI (Autonomous)</h4>
+      <ul>
+        <li>Reads ISA docs at scale</li>
+        <li>Studies kernels, extracts techniques</li>
+        <li>Implements and benchmarks variants</li>
+        <li>Profiles with rocprofv3</li>
+        <li>Self-corrects on evidence</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:24px;border:1px solid var(--bd);background:var(--paper)">
+    <div class="m-row"><div class="m-h">"Read hipconv"</div><div class="m-arr">&rarr;</div><div class="m-a">Toeplitz+MFMA &rarr; Step 4 (failed, but learned)</div></div>
+    <div class="m-row"><div class="m-h">"Read fused_mlp.py"</div><div class="m-arr">&rarr;</div><div class="m-a">sched_group_barrier &rarr; <strong>Step 5 (breakthrough)</strong></div></div>
+  </div>
+</div>
+
+<!-- 11 CORRECTIONS -->
+<div class="slide" data-screen-label="11 Corrections">
+  <div class="s-tag">5. Honesty</div>
+  <div class="s-title" style="font-size:36px">Self-Corrections</div>
+  <p class="s-sub" style="margin-bottom:36px">AI made confident claims. Human challenged. AI traced to sources and corrected.</p>
+  <div class="cor-grid">
+    <div class="cor">
+      <h4>LDS Size</h4>
+      <div class="wrong">64 KB per CU (CDNA3 docs)</div>
+      <div class="right">160 KB per CU (rocminfo)</div>
+      <p>MI350X has 2.5x more LDS. Changed entire occupancy analysis.</p>
+    </div>
+    <div class="cor">
+      <h4>LGKM Queue</h4>
+      <div class="wrong">"16-entry queue overflows"</div>
+      <div class="right">Unverified guess (vm_cnt.md)</div>
+      <p>Source only tested VMEM queue. LDS queue never measured.</p>
+    </div>
+    <div class="cor">
+      <h4>Compiler Occupancy</h4>
+      <div class="wrong">Compiler says occ=5 &rarr; runtime=5</div>
+      <div class="right">Reports VGPR limit only</div>
+      <p>LDS constraint at runtime: min(VGPR, LDS). Both give 5 on MI350X.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 12 TAKEAWAY -->
+<div class="slide" data-screen-label="12 Takeaway">
+  <div class="s-tag">Conclusion</div>
+  <div class="two-col">
+    <div>
+      <div class="big-num">10.7<span style="font-size:48px;color:var(--tx3)">x</span></div>
+      <div class="big-label">faster than PyTorch</div>
+      <div class="s-rule"></div>
+      <p style="font-size:22px;color:var(--tx2);margin-top:20px;line-height:1.7">AI read reference kernels (hipconv, PA, fused_mlp), extracted the <code style="font-family:var(--mono);color:var(--blue)">sched_group_barrier</code> technique, and beat the hand-tuned production kernel by 14%.</p>
+      <p style="font-size:20px;color:var(--tx2);margin-top:16px;line-height:1.8">Human provides context declaratively.<br>AI reads, implements, self-corrects.<br>Human verifies the result.</p>
+    </div>
+    <div>
+      <table class="tbl">
+        <thead><tr><th>Kernel</th><th>Time</th><th>Speedup</th></tr></thead>
+        <tbody>
+          <tr><td>PyTorch</td><td>5.81 ms</td><td>1.0x</td></tr>
+          <tr><td>Step 1: Naive</td><td>5.14 ms</td><td>1.1x</td></tr>
+          <tr><td>Step 2: NHWC</td><td>1.17 ms</td><td>5.0x</td></tr>
+          <tr><td>Step 3: NCHW+LDS</td><td>0.62 ms</td><td>9.4x</td></tr>
+          <tr class="f"><td>Step 4: MFMA</td><td>14.40 ms</td><td>0.4x</td></tr>
+          <tr class="w"><td>Step 5: SGB</td><td>0.54 ms</td><td>10.7x</td></tr>
+        </tbody>
+      </table>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--tx4);margin-top:16px">AMD Instinct MI350X &middot; CDNA4 / gfx950 &middot; bf16</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+</div><!-- /viewport -->
+
+<!-- Nav buttons outside the scaled deck -->
+<button class="nav-btn nav-prev" id="btnPrev" title="Previous (Left Arrow)">&larr;</button>
+<button class="nav-btn nav-next" id="btnNext" title="Next (Right Arrow)">&rarr;</button>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="slide-num" id="snum"></div>
+<div class="nav-hint">&larr; &rarr; or click arrows to navigate</div>
+
+<style>
+.nav-btn{position:fixed;top:50%;transform:translateY(-50%);z-index:200;
+  width:48px;height:48px;border:1px solid var(--bd);background:var(--paper);
+  font-family:var(--mono);font-size:20px;color:var(--tx2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,color .2s}
+.nav-btn:hover{background:var(--bd);color:var(--tx)}
+.nav-prev{left:16px}
+.nav-next{right:16px}
+</style>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let cur=parseInt(localStorage.getItem('evo-slide')||'0');
+if(cur>=total)cur=0;
+
+function go(n){
+  if(n<0||n>=total)return;
+  slides[cur].classList.remove('active');
+  cur=n;
+  slides[cur].classList.add('active');
+  document.getElementById('prog').style.width=((cur+1)/total*100)+'%';
+  document.getElementById('snum').textContent=String(cur+1).padStart(2,'0')+' / '+String(total).padStart(2,'0');
+  localStorage.setItem('evo-slide',cur);
+  if(slides[cur].dataset.screenLabel==='08 Chart'){
+    slides[cur].querySelectorAll('.b-fill').forEach(b=>{b.style.width=b.dataset.w+'%'});
+  }
+}
+go(cur);
+
+// Keyboard nav
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1)}
+  if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1)}
+});
+// Button nav
+document.getElementById('btnPrev').addEventListener('click',()=>go(cur-1));
+document.getElementById('btnNext').addEventListener('click',()=>go(cur+1));
+// Click on viewport: left half = prev, right half = next
+document.querySelector('.viewport').addEventListener('click',e=>{
+  if(e.target.closest('.nav-btn'))return; // don't double-fire from buttons
+  const mid=window.innerWidth/2;
+  (e.clientX>mid)?go(cur+1):go(cur-1);
+});
+
+function fit(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/1920,vh/1080);
+  document.getElementById('deck').style.transform='scale('+s+')';
+}
+fit();window.addEventListener('resize',fit);
+</script>
+</body>
+</html>
