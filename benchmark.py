@@ -15,7 +15,7 @@ import sys, os, math, time, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import torch
 import torch.nn.functional as F
-from pyhip import module
+from pyhip import module, calc_diff
 
 # ─── Problem definition (from task.md) ───
 B, C, D, H, W = 1, 512, 61, 45, 80
@@ -36,6 +36,34 @@ def make_inputs(device, dt=torch.bfloat16):
 
 def pytorch_ref(inp, wt, bias):
     return F.conv3d(inp, wt, bias=bias, padding=PAD, groups=C)
+
+
+def verify_vs_pytorch(ref, ret):
+    """
+    Same acceptance as pyhip/tests/contrib/conv3d/test.py (lines 179–199):
+    global calc_diff(ref, ret); if <= 0.001, pass. Otherwise each (b, c, d)
+    slice must satisfy torch.allclose(atol=0.01, rtol=0.01) OR slice calc_diff <= 0.001.
+    Returns (passed, all_diff, detail_message).
+    """
+    all_diff = calc_diff(ref, ret)
+    if all_diff <= 0.001:
+        return True, all_diff, ""
+
+    B, C_out, D_out = ref.shape[0], ref.shape[1], ref.shape[2]
+    for iib in range(B):
+        for iic in range(C_out):
+            for iid in range(D_out):
+                iiref = ref[iib, iic, iid, ...]
+                iiret = ret[iib, iic, iid, ...]
+                passed = torch.allclose(iiref, iiret, atol=0.01, rtol=0.01)
+                sdiff = calc_diff(iiref, iiret)
+                if not passed and sdiff > 0.001:
+                    return (
+                        False,
+                        all_diff,
+                        f"slice ({iib},{iic},{iid}) {sdiff=:.6e} allclose={passed}",
+                    )
+    return True, all_diff, "granular_ok"
 
 
 def benchmark_fn(fn, warmup=10, iters=100):
@@ -190,9 +218,10 @@ def main():
                 out_nchw = nhwc_to_nchw(out, (D_out, H_out, W_out))
             else:
                 out_nchw = out
-            max_diff = (ref.float() - out_nchw.float()).abs().max().item()
-            status = "PASS" if max_diff < 2.0 else "FAIL"
-            print(f"  {name:20s}: max_diff={max_diff:.6e}  {status}")
+            ok, all_diff, detail = verify_vs_pytorch(ref, out_nchw)
+            status = "PASS" if ok else "FAIL"
+            extra = f"  ({detail})" if detail else ""
+            print(f"  {name:20s}: calc_diff={all_diff:.6e}  {status}{extra}")
             active[step] = (name, lambda o=out, r=runner: r(o), is_nhwc)
         except Exception as e:
             print(f"  {name:20s}: SKIP ({e})")

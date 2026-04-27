@@ -204,16 +204,14 @@ During the project, AI made confident claims that turned out to be wrong. The hu
 **Lesson**: Honest engineering requires tracing claims to primary sources. AI + human skepticism catches errors that either alone would miss.
 
 ## Results
-
-All kernels produce correct results (max_diff = 0.25 vs PyTorch, normal for bf16 precision):
-
+All kernels produce correct results (calc_diff ~4e-6 vs PyTorch BF16 reference):
 ```
 GPU:     AMD Instinct MI350X
 Input:   [1, 512, 61, 45, 80] bf16
 Weight:  [512, 1, 3, 5, 5] bf16
 Output:  [1, 512, 59, 45, 80] bf16
 
-CORRECTNESS vs PyTorch F.conv3d: all PASS (max_diff=0.25)
+CORRECTNESS vs PyTorch F.conv3d: all PASS (calc_diff ~4e-6)
 
 Kernel                  Time (ms)  vs PyTorch
 -----------------------------------------------
@@ -253,6 +251,19 @@ EvoKernel/
   pyhip/                     # Minimal kernel compiler/launcher
   optimization_trajectory.md # Full 12-phase technical deep dive (1000+ lines)
 ```
+
+## Key Takeaways
+
+1. **Ground truth beats generic GPU lore.** If the hardware isn’t in the prompt, the model will still sound sure—treat **hardware specifications** and **architecture / ISA documentation** as the source of truth.
+
+2. **Build fast; measure deeper than the stopwatch.** Rapid iteration plus real observability with trusted tools—not just end-to-end time—turns guesses into evidence.
+
+3. **Humans own the task, the benchmark, and the verdict.** Define correctness and performance bars; only people sign off on what “done” means.
+
+4. **Map the docs; don’t flood the context.** An index and layered reading paths beat one enormous file agents must swallow whole.
+
+5. **Remember the lesson, not every dead end.** Capture what worked and what failed—then distill and drop noise so the trail stays sharp.
+
 
 ## Deep Dive
 

@@ -7,11 +7,11 @@ Padding: (0, 2, 2)  Groups: 512  GFLOPs: 16.31
 ========================================================================
 CORRECTNESS vs PyTorch F.conv3d
 ========================================================================
-  Step1: Naive        : max_diff=2.500000e-01  PASS
-  Step2: NHWC         : max_diff=2.500000e-01  PASS
-  Step3: NCHW+LDS     : max_diff=2.500000e-01  PASS
-  Step4: MFMA         : max_diff=2.500000e-01  PASS
-  Step5: SGB          : max_diff=2.500000e-01  PASS
+  Step1: Naive        : calc_diff=4.031402e-06  PASS
+  Step2: NHWC         : calc_diff=4.031402e-06  PASS
+  Step3: NCHW+LDS     : calc_diff=4.031406e-06  PASS
+  Step4: MFMA         : calc_diff=4.031403e-06  PASS
+  Step5: SGB          : calc_diff=4.031406e-06  PASS
 
 ========================================================================
 BENCHMARK (200 iterations)

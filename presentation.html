@@ -36,6 +36,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#e8e6e0;font-family:
 .s-title em{font-style:normal;color:var(--green)}
 .s-title .fail-em{font-style:normal;color:var(--red)}
 .s-sub{font-size:24px;color:var(--tx2);line-height:1.6;max-width:900px}
+.s-credits{font-size:22px;color:var(--tx2);line-height:1.5;margin-top:8px;margin-bottom:4px;max-width:1000px}
+.s-credits .team{font-weight:600;color:var(--tx)}
 .s-rule{width:80px;height:2px;background:var(--bd);margin:28px 0}
 
 /* Two columns */
@@ -146,6 +148,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#e8e6e0;font-family:
 .fail-item{font-size:16px;color:var(--tx3);padding:10px 16px;border:1px solid var(--bd2);background:var(--paper);display:flex;justify-content:space-between;align-items:center}
 .fail-item .name{color:var(--tx2)}
 .fail-item .result{font-family:var(--mono);font-size:14px;color:var(--red)}
+
+/* Key takeaways slide — one full-width row per principle; headline row + detail row */
+.slide.slide-key-tk{justify-content:flex-start;padding-top:84px}
+.tk-grid{display:flex;flex-direction:column;gap:0;margin-top:18px;flex:1;max-width:1640px}
+.tk-row{display:grid;grid-template-columns:1fr;row-gap:6px;padding:14px 0 16px;border-bottom:1px solid var(--bd2)}
+.tk-row:last-child{border-bottom:none;padding-bottom:0}
+.tk-h{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--tx);line-height:1.25;margin:0}
+.tk-body{font-size:15px;color:var(--tx2);line-height:1.5;margin:0;padding-left:2px}
+.tk-body strong{color:var(--tx);font-weight:600}
+
+/* Ending slide */
+.slide.slide-end{align-items:center;text-align:center}
+.end-quote{font-family:var(--serif);font-size:40px;font-weight:400;font-style:italic;color:var(--tx2);line-height:1.45;max-width:1200px;margin:28px auto 24px;padding:0;border:none;quotes:none}
+.end-quote em{font-style:normal;color:var(--tx);font-weight:600}
+.end-attrib{font-family:var(--mono);font-size:16px;color:var(--tx3);letter-spacing:.06em;margin:0}
+.end-attrib::before{content:'\2014  ';color:var(--tx4)}
 </style>
 </head>
 <body>
@@ -157,6 +175,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#e8e6e0;font-family:
 <div class="slide active" data-screen-label="01 Title">
   <div class="s-tag">EvoKernel</div>
   <div class="s-title" style="font-size:64px">AI reads 10 GPU kernels,<br><em>beats the hand-tuned best</em></div>
+  <p class="s-credits">Xiake Sun, Tong Qiu, Cheng Luo &middot; <span class="team">Kernel Darwin Lab</span></p>
   <div class="s-rule"></div>
   <p class="s-sub">3D depthwise convolution on AMD Instinct MI350X</p>
   <div class="stats">
@@ -353,18 +372,142 @@ v_fmac &times;10  <span class="g">&larr; overlaps with read</span>
 </div>
 
 <!-- 08 CHART -->
-<div class="slide" data-screen-label="08 Chart">
+<div class="slide" data-screen-label="08 Chart" style="padding-top:60px;padding-bottom:40px">
   <div class="s-tag">Results</div>
-  <div class="s-title" style="font-size:36px">Performance Comparison</div>
-  <div class="bar-chart" id="pchart">
-    <div class="b-row"><div class="b-label">PyTorch</div><div class="b-track"><div class="b-fill n" data-w="40.3"></div></div><div class="b-val">5.81ms<small>1.0x</small></div></div>
-    <div class="b-row"><div class="b-label">Step 1: Naive</div><div class="b-track"><div class="b-fill n" data-w="35.7"></div></div><div class="b-val">5.14ms<small>1.1x</small></div></div>
-    <div class="b-row"><div class="b-label">Step 2: NHWC</div><div class="b-track"><div class="b-fill n" data-w="8.1"></div></div><div class="b-val">1.17ms<small>5.0x</small></div></div>
-    <div class="b-row"><div class="b-label">Step 3: LDS</div><div class="b-track"><div class="b-fill n" data-w="4.3"></div></div><div class="b-val">0.62ms<small>9.4x</small></div></div>
-    <div class="b-row fail"><div class="b-label">Step 4: MFMA</div><div class="b-track"><div class="b-fill f" data-w="100"></div></div><div class="b-val">14.4ms<small>0.4x</small></div></div>
-    <div class="b-row win"><div class="b-label">Step 5: SGB</div><div class="b-track"><div class="b-fill w" data-w="3.75"></div></div><div class="b-val">0.54ms<small>10.7x</small></div></div>
+  <div class="s-title" style="font-size:32px;margin-bottom:8px">Performance Comparison</div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 20px">
+    <svg id="pchart" viewBox="0 0 1100 540" style="width:100%;max-height:500px" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="pBarGray" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#bbb"/><stop offset="100%" stop-color="#999"/>
+        </linearGradient>
+        <linearGradient id="pBarFail" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e8453c"/><stop offset="100%" stop-color="#c7402d"/>
+        </linearGradient>
+        <linearGradient id="pBarWin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#2d7d46"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Y-axis: time (left) -->
+      <text x="62" y="28" font-family="var(--mono)" font-size="13" fill="#aaa" text-anchor="end">ms</text>
+      <text x="62" y="72" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">6</text>
+      <text x="62" y="142" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">5</text>
+      <text x="62" y="212" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">4</text>
+      <text x="62" y="282" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">3</text>
+      <text x="62" y="352" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">2</text>
+      <text x="62" y="422" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">1</text>
+      <text x="62" y="478" font-family="var(--mono)" font-size="12" fill="#aaa" text-anchor="end">0</text>
+
+      <!-- Y-axis: bandwidth (right) -->
+      <text x="1050" y="28" font-family="var(--mono)" font-size="13" fill="#2d5fa0" text-anchor="start">GB/s</text>
+      <text x="1042" y="72" font-family="var(--mono)" font-size="12" fill="#2d5fa0" text-anchor="start">800</text>
+      <text x="1042" y="178" font-family="var(--mono)" font-size="12" fill="#2d5fa0" text-anchor="start">600</text>
+      <text x="1042" y="282" font-family="var(--mono)" font-size="12" fill="#2d5fa0" text-anchor="start">400</text>
+      <text x="1042" y="388" font-family="var(--mono)" font-size="12" fill="#2d5fa0" text-anchor="start">200</text>
+      <text x="1042" y="478" font-family="var(--mono)" font-size="12" fill="#2d5fa0" text-anchor="start">0</text>
+
+      <!-- Grid -->
+      <g stroke="#e0ddd5" stroke-width="0.5">
+        <line x1="72" y1="69" x2="1035" y2="69"/>
+        <line x1="72" y1="139" x2="1035" y2="139"/>
+        <line x1="72" y1="209" x2="1035" y2="209"/>
+        <line x1="72" y1="279" x2="1035" y2="279"/>
+        <line x1="72" y1="349" x2="1035" y2="349"/>
+        <line x1="72" y1="419" x2="1035" y2="419"/>
+        <line x1="72" y1="475" x2="1035" y2="475" stroke="#ccc"/>
+      </g>
+
+      <!-- Bars: x=120,280,440,600,760,920 width=110 -->
+      <!-- Scale: 0ms at y=475, 6ms at y=69. Per ms = (475-69)/6 = 67.7px -->
+      <!-- PyTorch 5.81: h=393, y=82 -->
+      <rect class="pbar" x="120" width="110" y="475" height="0" fill="url(#pBarGray)" data-ty="82" data-th="393" opacity="0.7"/>
+      <!-- Step 1 5.14: h=348, y=127 -->
+      <rect class="pbar" x="280" width="110" y="475" height="0" fill="url(#pBarGray)" data-ty="127" data-th="348" opacity="0.7"/>
+      <!-- Step 2 1.17: h=79, y=396 -->
+      <rect class="pbar" x="440" width="110" y="475" height="0" fill="url(#pBarGray)" data-ty="396" data-th="79" opacity="0.7"/>
+      <!-- Step 3 0.62: h=42, y=433 -->
+      <rect class="pbar" x="600" width="110" y="475" height="0" fill="url(#pBarGray)" data-ty="433" data-th="42" opacity="0.7"/>
+      <!-- Step 4 MFMA 14.4: capped, full height -->
+      <rect class="pbar" x="760" width="110" y="475" height="0" fill="url(#pBarFail)" data-ty="38" data-th="437" opacity="0.7"/>
+      <!-- Step 5 SGB 0.54: h=37, y=438 -->
+      <rect class="pbar" x="920" width="110" y="475" height="0" fill="url(#pBarWin)" data-ty="438" data-th="37" opacity="0.85"/>
+
+      <!-- MFMA break marks -->
+      <g class="pbar-extra" opacity="0">
+        <line x1="760" y1="55" x2="775" y2="48" stroke="#c7402d" stroke-width="2"/>
+        <line x1="775" y1="48" x2="790" y2="60" stroke="#c7402d" stroke-width="2"/>
+        <line x1="790" y1="60" x2="805" y2="48" stroke="#c7402d" stroke-width="2"/>
+        <line x1="805" y1="48" x2="820" y2="60" stroke="#c7402d" stroke-width="2"/>
+        <line x1="820" y1="60" x2="835" y2="48" stroke="#c7402d" stroke-width="2"/>
+        <line x1="835" y1="48" x2="850" y2="55" stroke="#c7402d" stroke-width="2"/>
+        <line x1="850" y1="55" x2="870" y2="55" stroke="#c7402d" stroke-width="2"/>
+      </g>
+
+      <!-- Time labels above bars -->
+      <g class="pbar-labels" opacity="0">
+        <text x="175" y="74" font-family="var(--mono)" font-size="14" fill="#555" text-anchor="middle" font-weight="500">5.81</text>
+        <text x="335" y="119" font-family="var(--mono)" font-size="14" fill="#555" text-anchor="middle" font-weight="500">5.14</text>
+        <text x="495" y="389" font-family="var(--mono)" font-size="14" fill="#555" text-anchor="middle" font-weight="500">1.17</text>
+        <text x="655" y="426" font-family="var(--mono)" font-size="14" fill="#555" text-anchor="middle" font-weight="500">0.62</text>
+        <text x="815" y="30" font-family="var(--mono)" font-size="14" fill="#c7402d" text-anchor="middle" font-weight="600">14.4</text>
+        <text x="975" y="431" font-family="var(--mono)" font-size="14" fill="#2d7d46" text-anchor="middle" font-weight="600">0.54</text>
+      </g>
+
+      <!-- Bandwidth line -->
+      <!-- BW: PyTorch 73, Naive 82, NHWC 361, LDS 682, MFMA 29, SGB 783 -->
+      <!-- Scale: 0 at y=475, 800 at y=69. Per GB/s = (475-69)/800 = 0.5075 -->
+      <!-- Py: y=438, Naive: y=433, NHWC: y=292, LDS: y=129, MFMA: y=460, SGB: y=78 -->
+      <polyline class="pline" points="175,438 335,433 495,292 655,129 815,460 975,78"
+                fill="none" stroke="#2d5fa0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                stroke-dasharray="2000" stroke-dashoffset="2000" opacity="0.7"/>
+
+      <!-- BW dots -->
+      <g class="pbar-dots" opacity="0">
+        <circle cx="175" cy="438" r="5" fill="#fff" stroke="#2d5fa0" stroke-width="2"/>
+        <circle cx="335" cy="433" r="5" fill="#fff" stroke="#2d5fa0" stroke-width="2"/>
+        <circle cx="495" cy="292" r="5" fill="#fff" stroke="#2d5fa0" stroke-width="2"/>
+        <circle cx="655" cy="129" r="5" fill="#fff" stroke="#2d5fa0" stroke-width="2"/>
+        <circle cx="815" cy="460" r="5" fill="#fff" stroke="#c7402d" stroke-width="2"/>
+        <circle cx="975" cy="78" r="5" fill="#fff" stroke="#2d7d46" stroke-width="2"/>
+      </g>
+
+      <!-- BW labels -->
+      <g class="pbar-bwlabels" opacity="0">
+        <text x="175" y="428" font-family="var(--mono)" font-size="11" fill="#2d5fa0" text-anchor="middle">73</text>
+        <text x="335" y="423" font-family="var(--mono)" font-size="11" fill="#2d5fa0" text-anchor="middle">82</text>
+        <text x="495" y="282" font-family="var(--mono)" font-size="11" fill="#2d5fa0" text-anchor="middle">361</text>
+        <text x="655" y="119" font-family="var(--mono)" font-size="11" fill="#2d5fa0" text-anchor="middle">682</text>
+        <text x="815" y="475" font-family="var(--mono)" font-size="11" fill="#c7402d" text-anchor="middle">29</text>
+        <text x="975" y="68" font-family="var(--mono)" font-size="11" fill="#2d7d46" text-anchor="middle">783</text>
+      </g>
+
+      <!-- X-axis labels -->
+      <g font-family="var(--mono)" text-anchor="middle">
+        <text x="175" y="496" font-size="14" fill="#555">PyTorch</text>
+        <text x="335" y="496" font-size="14" fill="#555">Step 1</text>
+        <text x="495" y="496" font-size="14" fill="#555">Step 2</text>
+        <text x="655" y="496" font-size="14" fill="#555">Step 3</text>
+        <text x="815" y="496" font-size="14" fill="#c7402d">Step 4</text>
+        <text x="975" y="496" font-size="14" fill="#2d7d46">Step 5</text>
+      </g>
+      <g font-family="var(--mono)" text-anchor="middle" fill="#aaa" font-size="11">
+        <text x="175" y="511">MIOpen</text>
+        <text x="335" y="511">Naive</text>
+        <text x="495" y="511">NHWC</text>
+        <text x="655" y="511">LDS</text>
+        <text x="815" y="511">MFMA</text>
+        <text x="975" y="511">SGB</text>
+      </g>
+
+      <!-- Legend (centered) -->
+      <rect x="330" y="528" width="14" height="8" fill="#bbb" opacity="0.7"/>
+      <text x="350" y="535" font-family="var(--mono)" font-size="11" fill="#888">Time (ms, left axis)</text>
+      <line x1="540" y1="532" x2="570" y2="532" stroke="#2d5fa0" stroke-width="2"/>
+      <circle cx="555" cy="532" r="3" fill="#fff" stroke="#2d5fa0" stroke-width="1.5"/>
+      <text x="578" y="535" font-family="var(--mono)" font-size="11" fill="#888">Bandwidth (GB/s, right axis)</text>
+    </svg>
   </div>
-  <p style="font-family:var(--mono);font-size:13px;color:var(--tx4);margin-top:16px;text-align:right">200 iterations &middot; bf16 &middot; MI350X (gfx950)</p>
 </div>
 
 <!-- 09 DEAD ENDS -->
@@ -474,6 +617,41 @@ v_fmac &times;10  <span class="g">&larr; overlaps with read</span>
   </div>
 </div>
 
+<!-- 13 KEY TAKEAWAYS (README) -->
+<div class="slide slide-key-tk" data-screen-label="13 Key Takeaways">
+  <div class="s-tag">Principles</div>
+  <div class="s-title" style="font-size:38px;margin-bottom:4px">Key Takeaways</div>
+  <div class="tk-grid">
+    <div class="tk-row">
+      <p class="tk-h">Ground truth beats generic GPU lore.</p>
+      <p class="tk-body">If the hardware isn&rsquo;t in the prompt, the model will still sound sure&mdash;treat <strong>hardware specifications</strong> and <strong>architecture / ISA documentation</strong> as the source of truth.</p>
+    </div>
+    <div class="tk-row">
+      <p class="tk-h">Build fast; measure deeper than the stopwatch.</p>
+      <p class="tk-body">Rapid iteration plus real observability with trusted tools&mdash;not just end-to-end time&mdash;turns guesses into evidence.</p>
+    </div>
+    <div class="tk-row">
+      <p class="tk-h">Humans own the task, the benchmark, and the verdict.</p>
+      <p class="tk-body">Define correctness and performance bars; only people sign off on what &ldquo;done&rdquo; means.</p>
+    </div>
+    <div class="tk-row">
+      <p class="tk-h">Map the docs; don&rsquo;t flood the context.</p>
+      <p class="tk-body">An index and layered reading paths beat one enormous file agents must swallow whole.</p>
+    </div>
+    <div class="tk-row">
+      <p class="tk-h">Remember the lesson, not every dead end.</p>
+      <p class="tk-body">Capture what worked and what failed&mdash;then distill and drop noise so the trail stays sharp.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 14 ENDING -->
+<div class="slide slide-end" data-screen-label="14 Ending">
+  <div class="s-tag">Thank you</div>
+  <blockquote class="end-quote">&ldquo;All models are wrong, but <em>some</em> are useful.&rdquo;</blockquote>
+  <p class="end-attrib">George E. P. Box</p>
+</div>
+
 </div><!-- /deck -->
 </div><!-- /viewport -->
 
@@ -498,8 +676,13 @@ v_fmac &times;10  <span class="g">&larr; overlaps with read</span>
 <script>
 const slides=document.querySelectorAll('.slide');
 const total=slides.length;
-let cur=parseInt(localStorage.getItem('evo-slide')||'0');
-if(cur>=total)cur=0;
+let cur=0;
+
+// Clear all active states first, then restore from localStorage
+slides.forEach(s=>s.classList.remove('active'));
+let saved=parseInt(localStorage.getItem('evo-slide')||'0');
+if(saved>=total||saved<0)saved=0;
+cur=saved;
 
 function go(n){
   if(n<0||n>=total)return;
@@ -510,7 +693,23 @@ function go(n){
   document.getElementById('snum').textContent=String(cur+1).padStart(2,'0')+' / '+String(total).padStart(2,'0');
   localStorage.setItem('evo-slide',cur);
   if(slides[cur].dataset.screenLabel==='08 Chart'){
-    slides[cur].querySelectorAll('.b-fill').forEach(b=>{b.style.width=b.dataset.w+'%'});
+    // Animate vertical bars
+    slides[cur].querySelectorAll('.pbar').forEach((bar,i)=>{
+      setTimeout(()=>{
+        bar.style.transition='y 0.7s cubic-bezier(.16,1,.3,1), height 0.7s cubic-bezier(.16,1,.3,1)';
+        bar.setAttribute('y',bar.dataset.ty);
+        bar.setAttribute('height',bar.dataset.th);
+      },i*100);
+    });
+    // Show labels, dots, line after bars
+    setTimeout(()=>{
+      slides[cur].querySelectorAll('.pbar-extra,.pbar-labels,.pbar-dots,.pbar-bwlabels').forEach(g=>{
+        g.style.transition='opacity 0.4s ease';
+        g.setAttribute('opacity','1');
+      });
+      const line=slides[cur].querySelector('.pline');
+      if(line){line.style.transition='stroke-dashoffset 1s ease';line.setAttribute('stroke-dashoffset','0');}
+    },800);
   }
 }
 go(cur);
